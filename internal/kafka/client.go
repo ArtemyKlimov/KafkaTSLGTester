@@ -22,21 +22,21 @@ func NewSaramaConfig(cfg config.KafkaConfig) (*sarama.Config, error) {
 	sc.Producer.RequiredAcks = sarama.WaitForLocal
 	sc.Producer.Compression = sarama.CompressionNone
 
-	if cfg.Secure || cfg.TLSPfxFile != "" {
+	if cfg.Secure {
 		tlsCfg, err := buildTLS(cfg)
 		if err != nil {
 			return nil, err
 		}
 		sc.Net.TLS.Enable = true
 		sc.Net.TLS.Config = tlsCfg
-	}
 
-	if cfg.User != "" {
-		sc.Net.SASL.Enable = true
-		sc.Net.SASL.Mechanism = sarama.SASLTypePlaintext
-		sc.Net.SASL.User = cfg.User
-		sc.Net.SASL.Password = cfg.Password
-		sc.Net.SASL.Handshake = true
+		if cfg.User != "" {
+			sc.Net.SASL.Enable = true
+			sc.Net.SASL.Mechanism = sarama.SASLTypePlaintext
+			sc.Net.SASL.User = cfg.User
+			sc.Net.SASL.Password = cfg.Password
+			sc.Net.SASL.Handshake = true
+		}
 	}
 
 	return sc, nil
