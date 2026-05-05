@@ -15,16 +15,19 @@ type AppConfig struct {
 }
 
 type KafkaConfig struct {
-	Host           string   `yaml:"host"`
-	Port           int      `yaml:"port"`
-	Brokers        []string `yaml:"brokers"`
-	Topic          string   `yaml:"topic"`
-	User           string   `yaml:"user"`
-	Password       string   `yaml:"password"`
-	Secure         bool     `yaml:"secure"`
-	TLSSkipVerify  bool     `yaml:"tls_skip_verify"`
-	TLSPfxFile     string   `yaml:"tls_pfx_file"`
-	TLSPfxPassword string   `yaml:"tls_pfx_password"`
+	Host     string   `yaml:"host"`
+	Port     int      `yaml:"port"`
+	Brokers  []string `yaml:"brokers"`
+	Topic    string   `yaml:"topic"`
+	User     string   `yaml:"user"`
+	Password string   `yaml:"password"`
+	Secure   bool     `yaml:"secure"`
+
+	TLSSkipVerify        bool   `yaml:"tls_skip_verify"`
+	TLSKeystoreFile      string `yaml:"tls_keystore_file"`
+	TLSKeystorePassword  string `yaml:"tls_keystore_password"`
+	TLSTruststoreFile    string `yaml:"tls_truststore_file"`
+	TLSTruststorePassword string `yaml:"tls_truststore_password"`
 }
 
 func (k KafkaConfig) BrokerAddresses() []string {

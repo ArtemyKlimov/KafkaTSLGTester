@@ -56,12 +56,16 @@ kafka:
   password: password
 
   # TLS-транспорт
-  secure: true           # true = включить TLS
-  tls_skip_verify: true  # не проверять сертификат брокера (для dev/self-signed)
+  secure: true              # true = включить TLS (и SASL, если заданы user/password)
+  tls_skip_verify: false    # не проверять сертификат брокера (для dev/self-signed)
 
-  # mTLS — клиентский сертификат (опционально)
-  tls_pfx_file: client.pfx
-  tls_pfx_password: "qwe123"
+  # Truststore — CA-сертификаты для проверки сертификата брокера (PKCS12/P12)
+  tls_truststore_file: server.truststore.p12
+  tls_truststore_password: "changeit"
+
+  # Keystore — клиентский сертификат + ключ для mTLS (PKCS12/P12, опционально)
+  tls_keystore_file: client.keystore.p12
+  tls_keystore_password: "changeit"
 ```
 
 ### Параметры по умолчанию
@@ -136,9 +140,11 @@ kafka:
   user: user
   password: password
   secure: true
-  tls_skip_verify: true
-  tls_pfx_file: client.pfx
-  tls_pfx_password: "qwe123"
+  tls_skip_verify: false
+  tls_truststore_file: server.truststore.p12
+  tls_truststore_password: "changeit"
+  tls_keystore_file: client.keystore.p12
+  tls_keystore_password: "changeit"
 
 defaults:
   batch_size: 5

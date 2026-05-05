@@ -8,10 +8,16 @@ kafka:
   topic: tslg_app_log
   user: user
   password: password
-  secure: false            # true = TLS-транспорт
-  tls_skip_verify: true   # не проверять сертификат брокера
-  tls_pfx_file: client.pfx
-  tls_pfx_password: "qwe123"
+  secure: false              # true = TLS-транспорт
+  tls_skip_verify: true     # не проверять сертификат брокера (для dev/self-signed)
+
+  # Truststore — CA-сертификаты для проверки сертификата брокера (PKCS12/P12)
+  # tls_truststore_file: server.truststore.p12
+  # tls_truststore_password: "changeit"
+
+  # Keystore — клиентский сертификат + ключ для mTLS (PKCS12/P12)
+  # tls_keystore_file: client.keystore.p12
+  # tls_keystore_password: "changeit"
 
 defaults:
   batch_size: 5
