@@ -1,0 +1,66 @@
+kafka:
+  host: localhost
+  port: 9092
+  # Кластер — перечислите несколько брокеров (имеет приоритет над host+port):
+  # brokers:
+  #   - broker1.example.com:9092
+  #   - broker2.example.com:9092
+  topic: tslg_app_log
+  user: user
+  password: password
+  secure: false            # true = TLS-транспорт
+  tls_skip_verify: true   # не проверять сертификат брокера
+  tls_pfx_file: client.pfx
+  tls_pfx_password: "qwe123"
+
+defaults:
+  batch_size: 5
+  workers: 4
+
+random_words:
+  - account
+  - select
+  - message
+  - error
+  - critical
+  - kafka
+  - TOPIC
+  - ignore
+  - summary
+  - app-loader
+  - loadbalancer
+  - webhook
+  - fail
+  - healthy
+
+blocks:
+  - count: 100
+    key: tslg_log
+    fields:
+      projectCode: "TSLG"
+      localTime:    "$(CURRENT_TIMESTAMP:3)"
+      risCode:      "131"
+      appType:      "$(one_of:NET,JAVA,GO)"
+      level:        "$(one_of:INFO,INFO,INFO,ERROR,WARNING,DEBUG)"
+      appName:      "$(one_of:axdp-client-api,axdp-ldm-streamer,axdp-gateway)"
+      levelInt:     "$(num:0to500)"
+      text:         "$(random_text_100)"
+      namespace:    "dk5-axdp01-axdp-dev1-1"
+      source_type:  "$(one_of:k8s,docker,host)"
+      hostAddress:  "$(random_ip)"
+      hostName:     "$(random_text_20)"
+      podName:      "$(random_word_20)"
+      traceId:      "$(uuid)"
+      eventId:      "$(uuid)"
+      messageId:    "$(uuid)"
+      callId:       "$(uuid)"
+      spanId:       "$(random_hex_16)"
+      requestId:    "$(uuid)"
+      tslgMdc:
+        requestId:  "$(uuid)"
+        userId:     "$(num:1000to9999)"
+      tslgOtherFields:
+        loggerName:   "com.example.axdp.Service"
+        threadName:   "$(num:1to200)"
+        callerMethod: "$(one_of:processRequest,handleEvent,sendResponse,readData,writeLog)"
+        callerClass:  "$(one_of:AxdpController,EventHandler,GatewayService,LdmStreamer)"
