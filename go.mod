@@ -4,8 +4,8 @@ go 1.24.1
 
 require (
 	github.com/IBM/sarama v1.46.3
-	golang.org/x/crypto v0.43.0
 	gopkg.in/yaml.v3 v3.0.1
+	software.sslmate.com/src/go-pkcs12 v0.7.1
 )
 
 require (
@@ -25,5 +25,6 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.26 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20250401214520-65e299d6c5c9 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
+	golang.org/x/crypto v0.43.0 // indirect
 	golang.org/x/net v0.46.0 // indirect
 )
