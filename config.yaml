@@ -8,6 +8,7 @@ kafka:
   topic: tslg_app_log
   user: user
   password: password
+  kafka_version: "2.1.0"    # версия протокола брокера (влияет на согласование API)
   secure: false              # true = TLS-транспорт
   tls_skip_verify: true     # не проверять сертификат брокера (для dev/self-signed)
 

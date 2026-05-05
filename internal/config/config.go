@@ -29,6 +29,11 @@ type KafkaConfig struct {
 	TLSTruststoreFile     string `yaml:"tls_truststore_file"`
 	TLSTruststorePassword string `yaml:"tls_truststore_password"`
 
+	// KafkaVersion — версия протокола Kafka (например "2.1.0").
+	// Если не указана, используется "2.1.0". Укажи версию своего брокера
+	// чтобы избежать лишних попыток согласования протокола.
+	KafkaVersion string `yaml:"kafka_version"`
+
 	// HostAliases позволяет задать маппинг hostname→IP для брокеров,
 	// которые не резолвятся через стандартный DNS (например, .local-домены).
 	HostAliases map[string]string `yaml:"host_aliases"`

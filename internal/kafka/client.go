@@ -18,7 +18,7 @@ import (
 // NewSaramaConfig builds a sarama.Config from the application KafkaConfig.
 func NewSaramaConfig(cfg config.KafkaConfig) (*sarama.Config, error) {
 	sc := sarama.NewConfig()
-	sc.Version = sarama.V2_8_0_0
+	sc.Version = parseKafkaVersion(cfg.KafkaVersion)
 	sc.Producer.Return.Successes = false
 	sc.Producer.Return.Errors = true
 	sc.Producer.RequiredAcks = sarama.WaitForLocal
@@ -156,4 +156,20 @@ func (d *aliasDialer) Dial(network, addr string) (net.Conn, error) {
 		addr = net.JoinHostPort(ip, port)
 	}
 	return (&net.Dialer{Timeout: 30 * time.Second, KeepAlive: 30 * time.Second}).Dial(network, addr)
+}
+
+// parseKafkaVersion разбирает строку версии из конфига.
+// Если версия не указана или не распознана, возвращает V2_1_0_0 —
+// это последняя версия без flexible-encoding в ApiVersionsRequest,
+// что исключает лишний round-trip при подключении к большинству брокеров.
+func parseKafkaVersion(v string) sarama.KafkaVersion {
+	if v == "" {
+		return sarama.V2_1_0_0
+	}
+	version, err := sarama.ParseKafkaVersion(v)
+	if err != nil {
+		slog.Warn("unknown kafka_version in config, using 2.1.0", "value", v)
+		return sarama.V2_1_0_0
+	}
+	return version
 }
