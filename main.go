@@ -3,10 +3,13 @@ package main
 import (
 	"context"
 	"flag"
+	"log"
 	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/IBM/sarama"
 
 	"kafkatsgltest/internal/config"
 	"kafkatsgltest/internal/engine"
@@ -21,6 +24,8 @@ func main() {
 	level := slog.LevelInfo
 	if *verbose {
 		level = slog.LevelDebug
+		// Включаем внутреннее логирование sarama — показывает реальную причину ошибок подключения
+		sarama.Logger = log.New(os.Stderr, "[sarama] ", log.LstdFlags)
 	}
 	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level})))
 

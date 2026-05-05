@@ -19,6 +19,12 @@ kafka:
   # tls_keystore_file: client.keystore.p12
   # tls_keystore_password: "changeit"
 
+  # host_aliases — маппинг hostname→IP для брокеров, чьи .local-имена
+  # не резолвятся через стандартный DNS (LLMNR/WINS не поддерживаются Go).
+  # host_aliases:
+  #   dvtslg-00kfp002.innodev.local: "10.x.x.x"
+  #   dvtslg-00kfp003.innodev.local: "10.x.x.x"
+
 defaults:
   batch_size: 5
   workers: 4

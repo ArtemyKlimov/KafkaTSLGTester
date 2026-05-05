@@ -23,11 +23,15 @@ type KafkaConfig struct {
 	Password string   `yaml:"password"`
 	Secure   bool     `yaml:"secure"`
 
-	TLSSkipVerify        bool   `yaml:"tls_skip_verify"`
-	TLSKeystoreFile      string `yaml:"tls_keystore_file"`
-	TLSKeystorePassword  string `yaml:"tls_keystore_password"`
-	TLSTruststoreFile    string `yaml:"tls_truststore_file"`
+	TLSSkipVerify         bool   `yaml:"tls_skip_verify"`
+	TLSKeystoreFile       string `yaml:"tls_keystore_file"`
+	TLSKeystorePassword   string `yaml:"tls_keystore_password"`
+	TLSTruststoreFile     string `yaml:"tls_truststore_file"`
 	TLSTruststorePassword string `yaml:"tls_truststore_password"`
+
+	// HostAliases позволяет задать маппинг hostname→IP для брокеров,
+	// которые не резолвятся через стандартный DNS (например, .local-домены).
+	HostAliases map[string]string `yaml:"host_aliases"`
 }
 
 func (k KafkaConfig) BrokerAddresses() []string {

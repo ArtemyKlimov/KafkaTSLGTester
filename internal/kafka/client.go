@@ -4,7 +4,9 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"net"
 	"os"
+	"time"
 
 	"github.com/IBM/sarama"
 	pkcs12 "software.sslmate.com/src/go-pkcs12"
@@ -20,6 +22,13 @@ func NewSaramaConfig(cfg config.KafkaConfig) (*sarama.Config, error) {
 	sc.Producer.Return.Errors = true
 	sc.Producer.RequiredAcks = sarama.WaitForLocal
 	sc.Producer.Compression = sarama.CompressionNone
+
+	// Кастомный диалер: заменяет hostname на IP из host_aliases.
+	// Решает проблему с .local-доменами, не резолвящимися через стандартный DNS.
+	if len(cfg.HostAliases) > 0 {
+		sc.Net.Proxy.Enable = true
+		sc.Net.Proxy.Dialer = &aliasDialer{aliases: cfg.HostAliases}
+	}
 
 	if cfg.Secure {
 		tlsCfg, err := buildTLS(cfg)
@@ -109,4 +118,21 @@ func loadKeystore(path, password string) (tls.Certificate, error) {
 		tlsCert.Certificate = append(tlsCert.Certificate, ca.Raw)
 	}
 	return tlsCert, nil
+}
+
+// aliasDialer реализует proxy.Dialer, подменяя hostname на IP из host_aliases
+// перед установкой TCP-соединения.
+type aliasDialer struct {
+	aliases map[string]string
+}
+
+func (d *aliasDialer) Dial(network, addr string) (net.Conn, error) {
+	host, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		return nil, err
+	}
+	if ip, ok := d.aliases[host]; ok {
+		addr = net.JoinHostPort(ip, port)
+	}
+	return (&net.Dialer{Timeout: 30 * time.Second, KeepAlive: 30 * time.Second}).Dial(network, addr)
 }
