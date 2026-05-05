@@ -49,6 +49,9 @@ func NewRandomWordGenerator(n int, words []string) *RandomWordGenerator {
 func (g *RandomWordGenerator) Resolve() string {
 	var sb strings.Builder
 	for sb.Len() < g.n {
+		if sb.Len() > 0 {
+			sb.WriteByte(' ')
+		}
 		sb.WriteString(g.words[g.rng.Intn(len(g.words))])
 	}
 	return sb.String()[:g.n]

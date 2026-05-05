@@ -100,6 +100,10 @@ func TestRandomWord(t *testing.T) {
 		if len(v) != 15 {
 			t.Fatalf("expected 15 chars, got %d: %q", len(v), v)
 		}
+		// слова разделяются пробелами
+		if len(v) > 1 && v[0] == ' ' {
+			t.Fatalf("should not start with space: %q", v)
+		}
 	}
 }
 

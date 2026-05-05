@@ -3,6 +3,7 @@ package builder
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"kafkatsgltest/internal/generator"
 )
@@ -31,7 +32,7 @@ func Compile(raw map[string]any, words []string) (FieldSpec, error) {
 			}
 			spec[k] = fieldValue{nested: nested}
 		default:
-			spec[k] = fieldValue{gen: generator.StaticGenerator{Value: fmt.Sprintf("%v", val)}}
+			spec[k] = fieldValue{gen: generator.StaticGenerator{Value: formatScalar(val)}}
 		}
 	}
 	return spec, nil
@@ -52,4 +53,23 @@ func resolve(spec FieldSpec) map[string]any {
 // Build generates one JSON-encoded message from a FieldSpec.
 func Build(spec FieldSpec) ([]byte, error) {
 	return json.Marshal(resolve(spec))
+}
+
+// formatScalar конвертирует нестроковые YAML-значения в строку без потери точности.
+// float64 передаётся в десятичной форме (не в экспоненциальной).
+func formatScalar(v any) string {
+	switch val := v.(type) {
+	case float64:
+		return strconv.FormatFloat(val, 'f', -1, 64)
+	case float32:
+		return strconv.FormatFloat(float64(val), 'f', -1, 32)
+	case int:
+		return strconv.Itoa(val)
+	case int64:
+		return strconv.FormatInt(val, 10)
+	case bool:
+		return strconv.FormatBool(val)
+	default:
+		return fmt.Sprintf("%v", val)
+	}
 }

@@ -68,6 +68,26 @@ func TestBuildNested(t *testing.T) {
 	}
 }
 
+func TestFormatScalar(t *testing.T) {
+	cases := []struct {
+		in   any
+		want string
+	}{
+		{float64(1778016042.569212), "1778016042.569212"},
+		{float64(1e10), "10000000000"},
+		{float64(3.14), "3.14"},
+		{int(42), "42"},
+		{int64(9999999999), "9999999999"},
+		{true, "true"},
+	}
+	for _, c := range cases {
+		got := formatScalar(c.in)
+		if got != c.want {
+			t.Errorf("formatScalar(%v) = %q, want %q", c.in, got, c.want)
+		}
+	}
+}
+
 func TestBuildIndependentMessages(t *testing.T) {
 	raw := map[string]any{"id": "$(uuid)"}
 	spec, _ := Compile(raw, testWords)

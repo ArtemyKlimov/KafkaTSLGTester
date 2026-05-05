@@ -25,12 +25,16 @@ func NewProducer(brokers []string, cfg *sarama.Config) (*Producer, error) {
 }
 
 // Send enqueues a message for async delivery. Thread-safe.
+// Если key пустой — сообщение отправляется без ключа (nil), Kafka распределяет по round-robin.
 func (p *Producer) Send(topic, key string, value []byte) {
-	p.ap.Input() <- &sarama.ProducerMessage{
+	msg := &sarama.ProducerMessage{
 		Topic: topic,
-		Key:   sarama.StringEncoder(key),
 		Value: sarama.ByteEncoder(value),
 	}
+	if key != "" {
+		msg.Key = sarama.StringEncoder(key)
+	}
+	p.ap.Input() <- msg
 }
 
 // Close flushes remaining messages and waits for the drain loop to exit.
