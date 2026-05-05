@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"log/slog"
 	"net"
 	"os"
 	"time"
@@ -72,6 +73,15 @@ func buildTLS(cfg config.KafkaConfig) (*tls.Config, error) {
 			return nil, err
 		}
 		tlsCfg.Certificates = []tls.Certificate{cert}
+
+		// Принудительно отправляем сертификат при любом запросе сервера,
+		// даже если CA не совпадает с AcceptableCAs (Go по умолчанию может пропустить отправку).
+		tlsCfg.GetClientCertificate = func(info *tls.CertificateRequestInfo) (*tls.Certificate, error) {
+			slog.Debug("TLS: server requested client certificate",
+				"acceptable_CAs", len(info.AcceptableCAs),
+				"our_cert_CN", cert.Leaf.Subject.CommonName)
+			return &tlsCfg.Certificates[0], nil
+		}
 	}
 
 	return tlsCfg, nil
@@ -107,6 +117,17 @@ func loadKeystore(path, password string) (tls.Certificate, error) {
 	privKey, cert, caCerts, err := pkcs12.DecodeChain(data, password)
 	if err != nil {
 		return tls.Certificate{}, fmt.Errorf("decoding keystore %q: %w", path, err)
+	}
+
+	slog.Debug("loaded keystore certificate",
+		"subject", cert.Subject.String(),
+		"issuer", cert.Issuer.String(),
+		"valid_until", cert.NotAfter.Format("2006-01-02"),
+		"has_private_key", privKey != nil,
+		"ca_chain_len", len(caCerts))
+
+	if privKey == nil {
+		return tls.Certificate{}, fmt.Errorf("keystore %q: private key is missing", path)
 	}
 
 	tlsCert := tls.Certificate{
