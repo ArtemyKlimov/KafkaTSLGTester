@@ -88,6 +88,75 @@ func TestFormatScalar(t *testing.T) {
 	}
 }
 
+func TestBuildIntAnnotation(t *testing.T) {
+	raw := map[string]any{
+		"levelInt": "$(int:num:0to500)",
+		"label":    "$(num:0to500)",
+	}
+	spec, err := Compile(raw, testWords)
+	if err != nil {
+		t.Fatalf("Compile: %v", err)
+	}
+	payload, err := Build(spec)
+	if err != nil {
+		t.Fatalf("Build: %v", err)
+	}
+	var out map[string]any
+	if err := json.Unmarshal(payload, &out); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	// $(int:num:…) must produce a JSON number, not a string.
+	if _, ok := out["levelInt"].(float64); !ok {
+		t.Fatalf("levelInt must be a JSON number, got %T: %v", out["levelInt"], out["levelInt"])
+	}
+	// Plain $(num:…) must still produce a JSON string.
+	if _, ok := out["label"].(string); !ok {
+		t.Fatalf("label must be a JSON string, got %T: %v", out["label"], out["label"])
+	}
+}
+
+func TestBuildFloatAnnotation(t *testing.T) {
+	raw := map[string]any{
+		"ratio": "$(float:num:0to100)",
+	}
+	spec, _ := Compile(raw, testWords)
+	payload, _ := Build(spec)
+	var out map[string]any
+	_ = json.Unmarshal(payload, &out)
+	if _, ok := out["ratio"].(float64); !ok {
+		t.Fatalf("ratio must be a JSON number, got %T: %v", out["ratio"], out["ratio"])
+	}
+}
+
+func TestBuildNativeYAMLTypes(t *testing.T) {
+	raw := map[string]any{
+		"count":   42,
+		"weight":  float64(3.14),
+		"enabled": true,
+	}
+	spec, err := Compile(raw, testWords)
+	if err != nil {
+		t.Fatalf("Compile: %v", err)
+	}
+	payload, err := Build(spec)
+	if err != nil {
+		t.Fatalf("Build: %v", err)
+	}
+	var out map[string]any
+	if err := json.Unmarshal(payload, &out); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if _, ok := out["count"].(float64); !ok {
+		t.Fatalf("count must be JSON number, got %T", out["count"])
+	}
+	if _, ok := out["weight"].(float64); !ok {
+		t.Fatalf("weight must be JSON number, got %T", out["weight"])
+	}
+	if _, ok := out["enabled"].(bool); !ok {
+		t.Fatalf("enabled must be JSON bool, got %T", out["enabled"])
+	}
+}
+
 func TestBuildIndependentMessages(t *testing.T) {
 	raw := map[string]any{"id": "$(uuid)"}
 	spec, _ := Compile(raw, testWords)

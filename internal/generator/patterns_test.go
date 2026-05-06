@@ -117,3 +117,53 @@ func TestTemplate(t *testing.T) {
 		}
 	}
 }
+
+func TestIntTypeAnnotation(t *testing.T) {
+	r := Parse("$(int:num:0to500)", words)
+	if r.ValueType != "int" {
+		t.Fatalf("expected ValueType=int, got %q", r.ValueType)
+	}
+	re := regexp.MustCompile(`^\d+$`)
+	for i := 0; i < 20; i++ {
+		v := r.Resolve()
+		if !re.MatchString(v) {
+			t.Fatalf("expected digits, got %q", v)
+		}
+	}
+}
+
+func TestFloatTypeAnnotation(t *testing.T) {
+	r := Parse("$(float:num:0to100)", words)
+	if r.ValueType != "float" {
+		t.Fatalf("expected ValueType=float, got %q", r.ValueType)
+	}
+	re := regexp.MustCompile(`^\d+$`)
+	for i := 0; i < 20; i++ {
+		v := r.Resolve()
+		if !re.MatchString(v) {
+			t.Fatalf("expected digits, got %q", v)
+		}
+	}
+}
+
+func TestNoTypeAnnotation(t *testing.T) {
+	r := Parse("$(num:0to500)", words)
+	if r.ValueType != "" {
+		t.Fatalf("expected empty ValueType, got %q", r.ValueType)
+	}
+}
+
+func TestTemplateIgnoresTypeAnnotation(t *testing.T) {
+	// Type annotation inside a template string is stripped but value is still a string.
+	r := Parse("code-$(int:num:1to9)", words)
+	if r.ValueType != "" {
+		t.Fatalf("TemplateGenerator should have no ValueType, got %q", r.ValueType)
+	}
+	re := regexp.MustCompile(`^code-\d$`)
+	for i := 0; i < 10; i++ {
+		v := r.Resolve()
+		if !re.MatchString(v) {
+			t.Fatalf("template mismatch: %q", v)
+		}
+	}
+}

@@ -13,26 +13,39 @@ import (
 type FieldSpec map[string]fieldValue
 
 type fieldValue struct {
-	gen    generator.Generator
-	nested FieldSpec
+	gen       generator.Generator
+	nested    FieldSpec
+	valueType string // "", "int", "float", "bool"
 }
 
 // Compile converts the raw map[string]any from YAML into a FieldSpec.
 // Recurses into nested maps; calls generator.Parse on string leaves.
+// Native YAML int/float/bool values are preserved as their JSON numeric/boolean types.
 func Compile(raw map[string]any, words []string) (FieldSpec, error) {
 	spec := make(FieldSpec, len(raw))
 	for k, v := range raw {
 		switch val := v.(type) {
 		case string:
-			spec[k] = fieldValue{gen: generator.Parse(val, words)}
+			result := generator.Parse(val, words)
+			spec[k] = fieldValue{gen: result.Gen, valueType: result.ValueType}
 		case map[string]any:
 			nested, err := Compile(val, words)
 			if err != nil {
 				return nil, fmt.Errorf("field %q: %w", k, err)
 			}
 			spec[k] = fieldValue{nested: nested}
+		case int:
+			spec[k] = fieldValue{gen: generator.StaticGenerator{Value: strconv.Itoa(val)}, valueType: "int"}
+		case int64:
+			spec[k] = fieldValue{gen: generator.StaticGenerator{Value: strconv.FormatInt(val, 10)}, valueType: "int"}
+		case float64:
+			spec[k] = fieldValue{gen: generator.StaticGenerator{Value: strconv.FormatFloat(val, 'f', -1, 64)}, valueType: "float"}
+		case float32:
+			spec[k] = fieldValue{gen: generator.StaticGenerator{Value: strconv.FormatFloat(float64(val), 'f', -1, 32)}, valueType: "float"}
+		case bool:
+			spec[k] = fieldValue{gen: generator.StaticGenerator{Value: strconv.FormatBool(val)}, valueType: "bool"}
 		default:
-			spec[k] = fieldValue{gen: generator.StaticGenerator{Value: formatScalar(val)}}
+			spec[k] = fieldValue{gen: generator.StaticGenerator{Value: fmt.Sprintf("%v", val)}}
 		}
 	}
 	return spec, nil
@@ -43,8 +56,30 @@ func resolve(spec FieldSpec) map[string]any {
 	for k, fv := range spec {
 		if fv.nested != nil {
 			out[k] = resolve(fv.nested)
-		} else {
-			out[k] = fv.gen.Resolve()
+			continue
+		}
+		s := fv.gen.Resolve()
+		switch fv.valueType {
+		case "int":
+			if n, err := strconv.ParseInt(s, 10, 64); err == nil {
+				out[k] = n
+			} else {
+				out[k] = s
+			}
+		case "float":
+			if f, err := strconv.ParseFloat(s, 64); err == nil {
+				out[k] = f
+			} else {
+				out[k] = s
+			}
+		case "bool":
+			if b, err := strconv.ParseBool(s); err == nil {
+				out[k] = b
+			} else {
+				out[k] = s
+			}
+		default:
+			out[k] = s
 		}
 	}
 	return out

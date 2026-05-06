@@ -8,25 +8,41 @@ import (
 
 var patternRe = regexp.MustCompile(`\$\(([^)]+)\)`)
 
-// Parse returns a Generator for the given raw YAML field value string.
-// If the string contains no $(…) tokens, a StaticGenerator is returned.
-// If it is a single $(…) token covering the whole string, the typed
-// generator for that pattern is returned.
-// Otherwise a TemplateGenerator that replaces all tokens in place is returned.
-func Parse(raw string, words []string) Generator {
+// Parse returns a ParseResult for the given raw YAML field value string.
+// ParseResult implements Generator, so existing callers can still call .Resolve().
+// Type annotations $(int:...) and $(float:...) set ValueType for JSON numeric output.
+func Parse(raw string, words []string) ParseResult {
 	locs := patternRe.FindAllStringIndex(raw, -1)
 	if len(locs) == 0 {
-		return StaticGenerator{Value: raw}
+		return ParseResult{Gen: StaticGenerator{Value: raw}}
 	}
-	// Whole-string single pattern
+	// Whole-string single pattern — preserve type annotation.
 	if len(locs) == 1 && locs[0][0] == 0 && locs[0][1] == len(raw) {
 		return parseSingleToken(raw, words)
 	}
-	return newTemplateGenerator(raw, words, locs)
+	return ParseResult{Gen: newTemplateGenerator(raw, words, locs)}
 }
 
-func parseSingleToken(token string, words []string) Generator {
+// parseSingleToken parses one full $(…) token and returns a ParseResult.
+// Supports type prefixes: $(int:…) and $(float:…).
+func parseSingleToken(token string, words []string) ParseResult {
 	inner := token[2 : len(token)-1] // strip $( and )
+
+	var valueType string
+	switch {
+	case strings.HasPrefix(inner, "int:"):
+		valueType = "int"
+		inner = inner[4:]
+	case strings.HasPrefix(inner, "float:"):
+		valueType = "float"
+		inner = inner[6:]
+	}
+
+	return ParseResult{Gen: parseGenerator(inner, words), ValueType: valueType}
+}
+
+// parseGenerator maps an inner expression (without $( )) to a Generator.
+func parseGenerator(inner string, words []string) Generator {
 	switch {
 	case inner == "CURRENT_TIMESTAMP":
 		return &TimestampGenerator{precision: 0}
@@ -51,7 +67,7 @@ func parseSingleToken(token string, words []string) Generator {
 	case inner == "random_ip":
 		return &IPGenerator{rng: newRand()}
 	default:
-		return StaticGenerator{Value: token}
+		return StaticGenerator{Value: "$(" + inner + ")"}
 	}
 }
 
@@ -73,7 +89,7 @@ func newTemplateGenerator(raw string, words []string, locs [][]int) *TemplateGen
 		if loc[0] > last {
 			parts = append(parts, templatePart{static: raw[last:loc[0]]})
 		}
-		parts = append(parts, templatePart{gen: parseSingleToken(raw[loc[0]:loc[1]], words)})
+		parts = append(parts, templatePart{gen: parseSingleToken(raw[loc[0]:loc[1]], words).Gen})
 		last = loc[1]
 	}
 	if last < len(raw) {
